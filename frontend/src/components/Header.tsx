@@ -17,6 +17,7 @@ export default function Header() {
             <Leaf className="size-5" aria-hidden />
           </span>
           <span className="hidden font-heading text-lg font-semibold tracking-tight sm:inline">Dispensa Intelligente</span>
+          <span className="rounded-full border border-border px-2 py-0.5 font-mono text-[10px] text-muted-foreground" data-testid="app-version">v1.0</span>
         </NavLink>
         <nav className="flex items-center gap-1 rounded-full border border-border bg-card p-1" aria-label="Sezioni">
           <NavLink to="/" end className={link} data-testid="nav-study-link">

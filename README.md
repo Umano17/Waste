@@ -1,4 +1,7 @@
-# dispensa
+# dispensa — v1.0.0
+
+Studio di fattibilità + prototipo "Dispensa Intelligente". Novità e configurazione: vedi CHANGELOG.md.
+
 
 Minimal split backend/frontend starter: **FastAPI + MongoDB** behind a
 **Vite + React 19 + TypeScript** frontend, joined by a small typed fetch layer
