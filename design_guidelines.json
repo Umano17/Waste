@@ -1,0 +1,179 @@
+{
+  "theme": "light",
+  "project_name": "Studio di Fattibilità: Smart Pantry AI & Timeline Anti-Spreco",
+  "archetype": "Organic & Earthy / High-Density Editorial Hybrid",
+  "colors": {
+    "surfaces": [
+      {
+        "name": "page",
+        "kind": "solid",
+        "bg": "#FBFBFA",
+        "on_bg": "#1C241E",
+        "on_bg_muted": "#55655A",
+        "roles": {
+          "link": "#1F6844",
+          "error": "#B91C1C",
+          "success": "#15803D"
+        }
+      },
+      {
+        "name": "panel",
+        "kind": "solid",
+        "bg": "#FFFFFF",
+        "on_bg": "#18201B",
+        "on_bg_muted": "#5A685F",
+        "roles": {
+          "link": "#1F6844",
+          "error": "#B91C1C",
+          "success": "#15803D"
+        }
+      },
+      {
+        "name": "sidebar",
+        "kind": "solid",
+        "bg": "#F4F6F4",
+        "on_bg": "#1C2620",
+        "on_bg_muted": "#56685D",
+        "roles": {
+          "link": "#1F6844"
+        }
+      },
+      {
+        "name": "verified_card",
+        "kind": "solid",
+        "bg": "#ECFDF5",
+        "on_bg": "#064E3B",
+        "on_bg_muted": "#047857",
+        "roles": {
+          "link": "#065F46"
+        }
+      },
+      {
+        "name": "estimate_card",
+        "kind": "solid",
+        "bg": "#FFFBEB",
+        "on_bg": "#78350F",
+        "on_bg_muted": "#B45309",
+        "roles": {
+          "link": "#92400E"
+        }
+      },
+      {
+        "name": "danger_card",
+        "kind": "solid",
+        "bg": "#FEF2F2",
+        "on_bg": "#7F1D1D",
+        "on_bg_muted": "#B91C1C",
+        "roles": {
+          "link": "#991B1B"
+        }
+      },
+      {
+        "name": "inverse",
+        "kind": "solid",
+        "bg": "#14241B",
+        "on_bg": "#F7FAF8",
+        "on_bg_muted": "#9EB3A6",
+        "roles": {
+          "link": "#6EE7B7",
+          "error": "#FCA5A5",
+          "success": "#86EFAC"
+        }
+      },
+      {
+        "name": "hero",
+        "kind": "gradient",
+        "contrast_against": "#18281F",
+        "guarantee": "scrim: linear-gradient(135deg, #112017 0%, #1B3526 100%)",
+        "on_bg": "#FFFFFF",
+        "on_bg_muted": "#A7C4B2",
+        "roles": {
+          "link": "#86EFAC",
+          "error": "#FCA5A5",
+          "success": "#86EFAC"
+        }
+      }
+    ],
+    "accent": "#1E7B4D",
+    "on_accent": "#FFFFFF",
+    "accent_secondary": "#D97706",
+    "on_accent_secondary": "#FFFFFF",
+    "border_subtle": "#E2E8E4",
+    "border_strong": "#CBD5CE"
+  },
+  "typography": {
+    "font_family_heading": "Outfit Variable, sans-serif",
+    "font_family_body": "DM Sans Variable, sans-serif",
+    "font_family_mono": "JetBrains Mono Variable, monospace",
+    "scale_px": {
+      "display": 52,
+      "h1": 40,
+      "h2": 30,
+      "h3": 22,
+      "body": 16,
+      "caption": 14
+    },
+    "letter_spacing": {
+      "headlines": "tracking-tight",
+      "labels": "tracking-[0.18em]",
+      "body": "tracking-normal"
+    }
+  },
+  "entry_surfaces": {
+    "/": "split-view hub: left sticky interactive navigation/progress, top feasibility executive summary banner, middle long-form 7-chapter study with verified/estimate callouts & interactive calculator, right/tabbed live working prototype (receipt upload, OCR edit, pantry timeline, AI recipes, Jarvis morning telegram test)"
+  },
+  "grids": {
+    "desktop_report_and_demo": "grid-cols-1 lg:grid-cols-12 gap-8 items-start",
+    "toc_sidebar_span": "lg:col-span-3 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto",
+    "main_content_span": "lg:col-span-9 space-y-12",
+    "competitor_grid": "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6",
+    "pantry_timeline_grid": "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4",
+    "calculator_grid": "grid grid-cols-1 md:grid-cols-2 gap-8 p-6 bg-white rounded-2xl border border-stone-200"
+  },
+  "motion": {
+    "card_hover": "transition-transform duration-200 ease-out hover:-translate-y-1 hover:shadow-md",
+    "tab_switch": "transition-opacity duration-200 ease-in-out",
+    "progress_bar": "transition-all duration-300 ease-out",
+    "modal_entrance": "transition-all duration-200 ease-out animate-in fade-in zoom-in-95"
+  },
+  "accessibility": {
+    "wcag_target": "WCAG 2.1 AA",
+    "text_contrast_ratio": ">= 4.5:1 on body, >= 3:1 on large headings",
+    "touch_targets": "Minimum 44x44px for buttons, chips, and table row actions on mobile viewports",
+    "data_testids": "Mandatory data-testid on every interactive control and result card",
+    "aria_labels": "Explicit aria-label for icon buttons (upload, edit, discard, eat, throw, telegram send)"
+  },
+  "image_urls": {
+    "pantry_hero": {
+      "url": "https://images.unsplash.com/photo-1783094269604-d94ef8f1407b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzN8MHwxfHNlYXJjaHw0fHxncm9jZXJ5JTIwcmVjZWlwdCUyMHBhbnRyeSUyMGZvb2R8ZW58MHx8fHwxNzkxMzI4NDkzfDA&ixlib=rb-4.1.0&q=85",
+      "description": "Donna che organizza la dispensa e scaffali con barattoli ordinati",
+      "placement": "Hero section banner & case study context card"
+    },
+    "pantry_jars": {
+      "url": "https://images.unsplash.com/photo-1592178036182-5400889dfc74?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzN8MHwxfHNlYXJjaHwyfHxncm9jZXJ5JTIwcmVjZWlwdCUyMHBhbnRyeSUyMGZvb2R8ZW58MHx8fHwxNzkxMzI4NDkzfDA&ixlib=rb-4.1.0&q=85",
+      "description": "Barattoli in vetro per conservazione alimenti e scadenze in dispensa",
+      "placement": "Pantry digital module header"
+    }
+  },
+  "components_structure": {
+    "AppHeader": "@/components/Header.tsx - Sticky glass header with feasibility title, mode toggle (Studio Completo / Prototipo Interattivo), and reset 'Ricomincia'",
+    "TableOfContents": "@/components/TableOfContents.tsx - Sticky nav with 7 numbered chapters, progress tracking, and jump links",
+    "VerifiedBadge": "@/components/ui/VerifiedBadge.tsx - Pill component distinguishing 'Dato Verificato' (source + date) from 'Stima' (assumptions)",
+    "CompetitorMatrix": "@/components/study/CompetitorMatrix.tsx - Comparison table against CozZo, Frigopane, SuperCook, Bring!, Too Good To Go",
+    "UnitEconomicsCalculator": "@/components/study/UnitEconomicsCalculator.tsx - Interactive calculator with sliders (Utenti 100/1k/10k, scontrini/mese, ricette AI/giorno, prezzo abbonamento €) and break-even projection",
+    "CostCharts": "@/components/study/CostCharts.tsx - Recharts breakdown of LLM OCR, Database, Hosting, and Net Margin",
+    "ReceiptUploadModal": "@/components/prototype/ReceiptUploadModal.tsx - Receipt scanner simulator (sample receipt images or file upload) with OCR parsing state",
+    "AbbreviationConfirmation": "@/components/prototype/AbbreviationConfirmation.tsx - Table/Cards to fix parsed receipt items (name expansion, storage location, category, shelf life degradation factor or real expiry override)",
+    "DigitalPantryTimeline": "@/components/prototype/DigitalPantryTimeline.tsx - Pantry items categorized by urgency: Rosso (1-2 giorni), Giallo (3-5 giorni), Verde (> 5 giorni), with quick actions: Consumato / Aperto / Gettato",
+    "RecipeGenerator": "@/components/prototype/RecipeGenerator.tsx - Daily AI recipe generation strictly prioritizing soonest expiring ingredients with nutrition tags",
+    "JarvisMorningTelegram": "@/components/prototype/JarvisMorningTelegram.tsx - Morning alert card simulator with Telegram Bot Token, Chat ID input, and 'Invia Notifica Test'"
+  },
+  "instructions_to_main_agent": [
+    "Build a dual-mode interactive application in Italian: Mode A = Studio di Fattibilità (comprehensive 7-chapter report with clear visual badges for Verified data vs Estimates, competitor benchmarks, tech architecture, legal considerations, and live Recharts unit economics calculator) and Mode B = Prototipo Operativo (real-time receipt photo upload -> abbreviation confirmation -> digital pantry degradation timeline -> smart anti-waste recipe suggestions -> Jarvis/Telegram test dispatch).",
+    "Support Italian number & currency formats: € (EUR) with comma decimal or standard format (e.g., 2,99 € / mese, 1.000 utenti).",
+    "Include pre-seeded realistic Italian grocery receipts (e.g. 'LATTE PS UHT 1L', 'PETTO POLLO BIO', 'INSALATINA MISTA', 'RICOTTA VACCINA 250G', 'BANANE BIO', 'PASSATA POMOD. 700G') with pre-calculated degradation curves based on storage type (Frigo, Dispensa, Freezer) and open/closed state.",
+    "Implement the full 7-chapter feasibility content in clear, accessible language for a non-technical reader, as explicitly requested by the user, while keeping rigorous numbers and verified sources (e.g., Waste Watcher International 2024, ISTAT 2024, OpenAI/Claude Token Pricing 2025/2026, GDPR EU 2016/679, Regolamento UE 1169/2011 per allergeni).",
+    "Ensure 'Ricomincia' reset button works with a confirmation dialog to wipe demo pantry items and restore default state.",
+    "All interactive elements must include descriptive data-testid attributes for testing."
+  ]
+}
