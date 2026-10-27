@@ -4,14 +4,15 @@
 
 ![Dispensa sull'iPhone](docs/schermata.png)
 
-Progetto personale nato come reparto del mio assistente [Jarvis](#origine) e poi reso autonomo.
+Progetto personale nato come reparto del mio assistente [Jarvis](#origine) e poi reso autonomo. → **[Caso studio](docs/caso-studio.md)**
 Gira sul Mac di casa e si apre dall'iPhone come un'app, anche fuori casa, senza esporre nulla a Internet.
 
 ## Cosa fa
 
 - **Scontrino → dispensa**: foto o testo dello scontrino; Claude interpreta le abbreviazioni («MOZZ.FDL 125G» → «Mozzarella fior di latte»), tu confermi o correggi. Le correzioni vengono ricordate per gli scontrini successivi. La foto non viene salvata.
 - **Scadenze stimate**: tabella categoria × luogo (frigo, dispensa, freezer) × aperto/chiuso, con fonti (USDA FoodKeeper, EFSA, Ministero della Salute). La data in etichetta vince sempre; aprire un prodotto accorcia la durata.
-- **Pezzi uguali**: «Mozzarella ×2» — apri, finisci o butti un pezzo alla volta; quello aperto diventa una scheda con la sua scadenza.
+- **Pezzi uguali**: «Zucchine ×8» — con il contatore usi, apri o butti quanti pezzi vuoi (es. 4 su 8); quelli aperti diventano una scheda con la loro scadenza. Frutta e verdura fresche non si «aprono».
+- **Aggiunta a mano veloce**: scrivi «tonno in scatola» e tipo e luogo si scelgono da soli.
 - **Annulla e cestino**: ogni «finito» o «buttato» si annulla per 6 secondi; il cestino tiene gli ultimi 14 giorni e un pezzo ripescato torna nella sua confezione.
 - **Ricette del giorno**: 3 ricette mediterranee che usano per primi gli ingredienti in scadenza; «L'ho cucinata» li toglie dalla dispensa.
 - **Riepilogo del mattino** su Telegram (facoltativo).
@@ -75,7 +76,7 @@ pip install -r requirements-dev.txt
 pytest -q
 ```
 
-35 test su durate, urgenza, pezzi, cestino, ricette (con Claude simulato, quindi gratis), controllo d'ingresso e fascia oraria. Girano a ogni push con GitHub Actions.
+40 test su durate, urgenza, pezzi, tipo automatico, cestino, ricette (con Claude simulato, quindi gratis), controllo d'ingresso e fascia oraria. Girano a ogni push con GitHub Actions.
 
 ## Limiti
 
@@ -86,7 +87,7 @@ pytest -q
 
 ## Origine
 
-Dispensa è nata da uno **studio di fattibilità** (mercato, costi per utente, aspetti legali) con un prototipo React + FastAPI, poi è diventata un reparto di Jarvis, il mio assistente personale in Python. Qui è stata separata in un progetto autonomo: server proprio, accesso con PIN, test e avvio automatico.
+Dispensa è nata da uno **studio di fattibilità** (mercato, costi per utente, aspetti legali) con un prototipo React + FastAPI (conservato nel ramo `emergent-v0`), poi è diventata un reparto di Jarvis, il mio assistente personale in Python. Qui è stata separata in un progetto autonomo: server proprio, accesso con PIN, test e avvio automatico.
 
 ## Crediti
 
