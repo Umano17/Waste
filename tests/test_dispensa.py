@@ -53,9 +53,19 @@ def test_pezzi_validati():
     assert [d._pezzi({"pezzi": v}) for v in ("abc", 0, 500, None, 3)] == [1, 1, 99, 1, 3]
 
 
+def test_prodotti_vecchi_ricavano_i_pezzi_dalla_quantita():
+    assert [d._pezzi({"quantita": q}) for q in ("2 pz", "18 pz", "125 g", "1,5 L", "")] == [2, 18, 1, 1, 1]
+    vecchio = {**d._nuovo({"nome": "Tonno", "categoria": "conserve"}), "quantita": "2 pz"}
+    del vecchio["pezzi"]
+    d._scrivi("prodotti", [vecchio])
+    uno = d.aggiorna(vecchio["id"], quanti=1, aperto=True)
+    resto = next(x for x in d.elenco() if x["id"] == vecchio["id"])
+    assert uno["pezzi"] == 1 and resto["pezzi"] == 1 and resto["quantita"] == ""
+
+
 def test_apri_uno_stacca_un_pezzo_con_la_sua_scadenza():
     p = d.aggiungi({"nome": "Mozzarella", "categoria": "formaggio_fresco", "pezzi": 2})
-    uno = d.aggiorna(p["id"], uno=True, aperto=True)
+    uno = d.aggiorna(p["id"], quanti=1, aperto=True)
     assert uno["id"] != p["id"] and uno["pezzi"] == 1 and uno["aperto"]
     resto = next(x for x in d.elenco() if x["id"] == p["id"])
     assert resto["pezzi"] == 1 and not resto["aperto"]
@@ -70,7 +80,7 @@ def test_senza_uno_la_modifica_vale_per_tutta_la_confezione():
 
 def test_ripristino_riunisce_il_pezzo_alla_confezione():
     p = d.aggiungi({"nome": "Uova", "categoria": "uova", "pezzi": 3})
-    finito = d.aggiorna(p["id"], uno=True, stato="consumato")
+    finito = d.aggiorna(p["id"], quanti=1, stato="consumato")
     assert [x["pezzi"] for x in d.elenco()] == [2]
     d.aggiorna(finito["id"], stato="attivo")
     assert [x["pezzi"] for x in d.elenco()] == [3]
@@ -79,7 +89,7 @@ def test_ripristino_riunisce_il_pezzo_alla_confezione():
 
 def test_pezzo_aperto_ripristinato_resta_separato():
     p = d.aggiungi({"nome": "Yogurt", "categoria": "yogurt", "pezzi": 4})
-    aperto = d.aggiorna(p["id"], uno=True, aperto=True)
+    aperto = d.aggiorna(p["id"], quanti=1, aperto=True)
     d.aggiorna(aperto["id"], stato="buttato")
     d.aggiorna(aperto["id"], stato="attivo")
     assert sorted(x["pezzi"] for x in d.elenco()) == [1, 3]
@@ -148,3 +158,25 @@ def test_ricette_e_cucinata_tolgono_un_pezzo(monkeypatch):
     d.cucinata(r["id"])
     assert [x["pezzi"] for x in d.elenco()] == [5]
     assert d.ricette_oggi()[0]["cucinata"]
+
+
+def test_usare_piu_pezzi_insieme():
+    p = d.aggiungi({"nome": "Zucchine", "categoria": "verdura", "pezzi": 8})
+    usate = d.aggiorna(p["id"], quanti=4, stato="consumato")
+    assert usate["pezzi"] == 4 and [x["pezzi"] for x in d.elenco()] == [4]
+    d.aggiorna(usate["id"], stato="attivo")
+    assert [x["pezzi"] for x in d.elenco()] == [8]
+
+
+def test_frutta_e_verdura_non_si_aprono():
+    p = d.aggiungi({"nome": "Mele", "categoria": "frutta", "pezzi": 3})
+    assert not d.aggiorna(p["id"], quanti=1, aperto=True)["aperto"]
+    assert not p["apribile"] and d.aggiungi({"nome": "Latte", "categoria": "latte_fresco"})["apribile"]
+
+
+def test_indovina_il_tipo_dal_nome():
+    casi = {"Tonno in scatola": "conserve", "tonno fresco": "pesce_fresco", "Zucchine": "verdura",
+            "Latte di soia": "latte_uht", "Latte intero": "latte_fresco", "Mozzarella": "formaggio_fresco",
+            "Petto di pollo": "pollame", "Penne rigate": "secco", "Mele Golden": "frutta", "Rucola": "verdura_foglia",
+            "Coca-Cola Zero": "bevande", "Uova fresche": "uova", "Piselli surgelati": "surgelati", "xyz": None}
+    assert {n: d.indovina(n) for n in casi} == casi

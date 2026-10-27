@@ -125,6 +125,11 @@ def stato():
                     "categorie": dispensa.categorie(), "avvertenza": dispensa.AVVERTENZA})
 
 
+@app.route("/api/dispensa/tipo")
+def tipo():
+    return jsonify({"categoria": dispensa.indovina(request.args.get("nome", "")[:120])})
+
+
 @app.route("/api/dispensa/scontrino", methods=["POST"])
 def scontrino():
     d = request.get_json(silent=True) or {}
@@ -167,7 +172,8 @@ def aggiungi():
 def aggiorna(id_):
     d = request.get_json(silent=True) or {}
     try:
-        return jsonify(dispensa.aggiorna(id_, uno=bool(d.get("uno")),
+        quanti = d.get("quanti", 1 if d.get("uno") else 0)
+        return jsonify(dispensa.aggiorna(id_, quanti=quanti if isinstance(quanti, int) else 0,
                                          **{k: d.get(k) for k in ("stato", "aperto", "luogo", "scadenza", "togli_scadenza")}))
     except ValueError as e:
         return _errore(e, 404)

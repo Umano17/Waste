@@ -70,7 +70,10 @@ textarea{min-height:110px;resize:vertical}
 .item .m{font-size:13px;color:var(--muted)}
 .quando{font-size:12px;font-weight:700;white-space:nowrap;padding:3px 9px;border-radius:999px}
 .quando.rosso{color:var(--red);background:var(--red-soft)}.quando.giallo{color:var(--amber);background:var(--amber-soft)}.quando.verde{color:var(--green);background:var(--green-soft)}
-.az{display:flex;gap:6px;margin-top:8px}
+.az{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.qn{display:inline-flex;align-items:center;border:1px solid var(--vetro-bordo);border-radius:10px;background:var(--vetro-forte);flex:0 0 auto}
+.qn button{min-width:32px;min-height:34px;border:0;background:none;color:inherit;font-size:17px;cursor:pointer}
+.qn b{min-width:18px;text-align:center;font-variant-numeric:tabular-nums}
 .az .btn.sm{padding:0 10px;font-size:13px;min-height:34px;flex:0 0 auto}
 .badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:999px;background:var(--chip);color:var(--muted);vertical-align:2px}
 .badge.amb{background:var(--amber-soft);color:var(--amber)}
@@ -293,20 +296,24 @@ function voce(p,azioni,conData){
   return '<div class="item" data-id="'+p.id+'"><span class="dot '+p.urgenza+'" aria-hidden="true"></span><div class="t">'+
   '<div class="n">'+esc(p.nome)+(p.pezzi>1?' <span class="badge">×'+p.pezzi+'</span>':'')+(p.aperto?' <span class="badge amb">aperto</span>':'')+'</div>'+
   '<div class="m">'+esc([p.quantita,LUOGHI.filter(function(l){return l[0]===p.luogo})[0][1],p.scadenza?'scad. '+dataIt(p.scadenza):'stima'].filter(Boolean).join(' · '))+'</div>'+
-  (azioni?'<div class="az">'+(p.aperto?'<button class="btn sm" data-a="aperto">Chiuso</button>':'<button class="btn sm" data-a="aperto">'+(p.pezzi>1?'Apri 1':'Aperto')+'</button>')+
-    '<button class="btn sm" data-a="consumato">'+(p.pezzi>1?'✓ 1 finito':'✓ Finito')+'</button><button class="btn sm warn" data-a="buttato">'+(p.pezzi>1?'Butta 1':'Buttato')+'</button>'+
+  (azioni?'<div class="az">'+(p.pezzi>1?'<span class="qn" data-max="'+p.pezzi+'"><button data-q="-1" aria-label="Uno in meno">−</button><b aria-live="polite">1</b><button data-q="1" aria-label="Uno in più">+</button></span>':'')+
+    (!p.apribile?'':p.aperto?'<button class="btn sm" data-a="aperto">Chiuso</button>':'<button class="btn sm" data-a="aperto">'+(p.pezzi>1?'Apri':'Aperto')+'</button>')+
+    '<button class="btn sm" data-a="consumato">'+(p.pezzi>1?'✓ Usati':'✓ Finito')+'</button><button class="btn sm warn" data-a="buttato">'+(p.pezzi>1?'Butta':'Buttato')+'</button>'+
     '<button class="btn sm" data-a="scad" aria-label="Cambia scadenza">📅</button></div>':'')+
   '</div><span class="quando '+p.urgenza+'">'+quando(p.giorni)+(conData?' · '+dataIt(p.entro):'')+'</span></div>'}
 function disegnaLista(){disegnaFiltri();
   var l=S.prodotti.filter(function(p){return S.filtro==='tutti'||p.luogo===S.filtro});
   $('lista').innerHTML=l.length?l.map(function(p){return voce(p,true)}).join(''):'<div class="vuoto">Niente qui. Fotografa uno scontrino o aggiungi a mano.</div>'}
-$('lista').addEventListener('click',function(e){var b=e.target.closest('button[data-a]');if(!b)return;
+$('lista').addEventListener('click',function(e){var q=e.target.closest('button[data-q]');
+  if(q){var s=q.parentNode,v=s.querySelector('b'),n=Math.max(1,Math.min(+s.dataset.max,+v.textContent+(+q.dataset.q)));v.textContent=n;return}
+  var b=e.target.closest('button[data-a]');if(!b)return;
   var it=b.closest('.item'),id=it.dataset.id,a=b.dataset.a,p=S.prodotti.filter(function(x){return x.id===id})[0];
   if(a==='scad'){apriScadenza(it,p);return}
-  var dati=a==='aperto'?{aperto:!p.aperto,uno:!p.aperto}:{stato:a,uno:true};b.disabled=true;
+  var qn=it.querySelector('.qn b'),n=qn?+qn.textContent:1;
+  var dati=a==='aperto'?{aperto:!p.aperto,quanti:p.aperto?0:n}:{stato:a,quanti:n};b.disabled=true;
   api('/api/dispensa/prodotti/'+id,dati).then(function(r){carica();
     if(a==='aperto'){toast('Aggiornato');return}
-    toast((a==='consumato'?'Finito: ':'Buttato: ')+p.nome,'Annulla',function(){ripristina(r.id)})}).catch(function(e){b.disabled=false;toast(e.message)})});
+    toast((a==='consumato'?'Finito: ':'Buttato: ')+(n>1?n+' × ':'')+p.nome,'Annulla',function(){ripristina(r.id)})}).catch(function(e){b.disabled=false;toast(e.message)})});
 function apriScadenza(it,p){var t=it.querySelector('.t');if(t.querySelector('.scad-ed'))return;
   var d=document.createElement('div');d.className='scad-ed';
   d.innerHTML='<input type="date" aria-label="Scadenza sull\'etichetta" value="'+esc(p.scadenza||'')+'"><button class="btn sm pr">Salva</button>'+(p.scadenza?'<button class="btn sm">Togli</button>':'');
@@ -333,13 +340,19 @@ function disegnaLinea(){
 
 /* ---------- aggiunta a mano */
 function preparaManuale(){if($('m-cat').options.length)return;$('m-cat').innerHTML=catOpt('verdura');$('m-luogo').outerHTML=seg('m',S.luogoM).replace('data-seg="m"','data-seg="m" id="m-luogo"');
-  $('m-cat').onchange=function(){var c=S.categorie.filter(function(x){return x.chiave===$('m-cat').value})[0];if(c)scegliSeg($('m-luogo'),c.luogo)}}
+  $('m-cat').onchange=function(){S.tipoScelto=true;luogoDelTipo()};
+  /* il tipo si sceglie da solo mentre scrivi il nome, finché non lo cambi tu */
+  var attesa;$('m-nome').addEventListener('input',function(){clearTimeout(attesa);var n=this.value.trim();
+    if(S.tipoScelto||n.length<3)return;
+    attesa=setTimeout(function(){api('/api/dispensa/tipo?nome='+encodeURIComponent(n)).then(function(r){
+      if(r.categoria&&!S.tipoScelto){$('m-cat').value=r.categoria;luogoDelTipo()}}).catch(function(){})},300)})}
+function luogoDelTipo(){var c=S.categorie.filter(function(x){return x.chiave===$('m-cat').value})[0];if(c)scegliSeg($('m-luogo'),c.luogo)}
 function scegliSeg(el,v){el.querySelectorAll('button').forEach(function(b){b.classList.toggle('on',b.dataset.v===v)})}
 function valSeg(el){var b=el.querySelector('button.on');return b?b.dataset.v:'dispensa'}
 document.addEventListener('click',function(e){var b=e.target.closest('.seg button');if(b)scegliSeg(b.parentNode,b.dataset.v)});
 $('m-ok').onclick=function(){var n=$('m-nome').value.trim();if(!n){toast('Scrivi il nome del prodotto');return}
   api('/api/dispensa/prodotti',{nome:n,categoria:$('m-cat').value,luogo:valSeg($('m-luogo')),scadenza:$('m-scad').value||null,pezzi:+$('m-pezzi').value||1})
-  .then(function(){$('m-nome').value='';$('m-scad').value='';$('m-pezzi').value=1;toast('Aggiunto: '+n);carica()}).catch(function(e){toast(e.message)})};
+  .then(function(){$('m-nome').value='';$('m-scad').value='';$('m-pezzi').value=1;S.tipoScelto=false;toast('Aggiunto: '+n);carica()}).catch(function(e){toast(e.message)})};
 $('ricomincia').onclick=function(){if(!confirm('Svuoto la dispensa e le ricette di oggi? Le abbreviazioni imparate restano.'))return;
   api('/api/dispensa/ricomincia',{}).then(function(r){toast('Dispensa svuotata ('+r.tolti+' prodotti)');carica()}).catch(function(e){toast(e.message)})};
 

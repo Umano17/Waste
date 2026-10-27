@@ -29,6 +29,7 @@ BASE = Path(__file__).parent
 DATI = BASE / "dati"
 FUSO = ZoneInfo(os.getenv("DISPENSA_FUSO", "Europe/Rome"))
 MODELLO = os.getenv("DISPENSA_MODELLO", "claude-sonnet-5-5")
+PZ = re.compile(r"^\s*(\d+)\s*(pz|pezzi|x)?\s*$", re.I)
 _lock = threading.RLock()
 LUOGHI = ("frigo", "dispensa", "freezer")
 STATI = ("attivo", "consumato", "buttato")
@@ -61,6 +62,8 @@ TABELLA: dict[str, tuple[str, dict, int]] = {
     "bevande": ("Bevande", {"frigo": 180, "dispensa": 180, "freezer": None}, 3),
     "altro": ("Altro", {"frigo": 7, "dispensa": 30, "freezer": 90}, 5),
 }
+# Frutta e verdura fresche non si "aprono": o ci sono o le hai usate.
+SENZA_APERTO = {"verdura_foglia", "verdura", "frutta", "frutta_delicata"}
 LUOGO_DEFAULT = {
     "latte_fresco": "frigo", "latte_uht": "dispensa", "yogurt": "frigo", "formaggio_fresco": "frigo",
     "formaggio_stagionato": "frigo", "uova": "frigo", "carne_fresca": "frigo", "carne_macinata": "frigo",
@@ -110,6 +113,46 @@ def categoria(c) -> str:
     return c if c in TABELLA else "altro"
 
 
+# Per l'inserimento a mano: dal nome indovino il tipo. Conta l'ordine: le regole più specifiche
+# vengono prima ("tonno in scatola" è una conserva, "tonno fresco" è pesce, "latte di soia" non è latte fresco).
+INDIZI = [
+    (r"tonno fresco|pesce fresco|salmone fresco", "pesce_fresco"),
+    (r"surgelat|congelat|bastoncini|findus", "surgelati"),
+    (r"in scatola|sott.?olio|sott.?aceto|in latta|pelati|passata|polpa di pomodoro|legumi lessati|ceci lessati"
+     r"|fagioli lessati|tonno|sgombro in|mais dolce|olive|confettura|marmellata|miele", "conserve"),
+    (r"uht|a lunga conservazione|latte (di|vegetale)|bevanda (di|vegetale)|soia|avena drink|mandorla drink", "latte_uht"),
+    (r"latte", "latte_fresco"),
+    (r"yogurt|kefir|skyr|panna|burro|mascarpone|latte fermentato", "yogurt"),
+    (r"mozzarell|ricotta|stracchino|burrata|crescenza|squacquerone|robiola|fiocchi di latte|feta", "formaggio_fresco"),
+    (r"parmigian|grana|pecorino|provolone|asiago|emmental|fontina|gorgonzola|formaggio", "formaggio_stagionato"),
+    (r"\buov[ao]", "uova"),
+    (r"macinat|salsicc|hamburger|polpett", "carne_macinata"),
+    (r"pollo|tacchino|petto di|cosce|sovracosc|ali di", "pollame"),
+    (r"prosciutt|salame|mortadell|bresaola|speck|pancetta|wurstel|affettat|coppa", "salumi"),
+    (r"manzo|bovino|vitell|maiale|suino|agnello|bistecc|fettin|spezzatino|arrosto|carne", "carne_fresca"),
+    (r"salmone|merluzz|orata|branzino|spigola|gamber|cozze|vongole|calamar|polpo|seppi|pesce|tonno fresco", "pesce_fresco"),
+    (r"insalat|rucola|lattug|spinac|valerian|songino|radicchi|bietol|cavolo nero|basilico|prezzemolo", "verdura_foglia"),
+    (r"fragol|lampon|mirtill|more\b|banan|uva\b|ciliegi|albicocc|pesche|pesca\b|fichi|kiwi|frutti di bosco", "frutta_delicata"),
+    (r"mel[ae]\b|pere\b|pera\b|arance|arancia|mandarin|clementin|limon|pompelm|ananas|anguri|melone|prugn|cachi|frutta", "frutta"),
+    (r"zucchin|pomodor|carot|patat|cipoll|aglio|peperon|melanzan|broccol|cavolfior|cavol|finocch|sedano|zucca"
+     r"|funghi|asparag|carciof|porr|cetriol|fagiolin|piselli freschi|verdur", "verdura"),
+    (r"pane|panin|piadin|focacc|baguette|rosett|ciabatt|tramezzin", "pane"),
+    (r"pasta|spaghett|penne|fusill|rigaton|riso|farina|cous|orzo|farro|lenticch|ceci|fagioli|cereali|fette biscottate"
+     r"|crackers?|grissin|zucchero|sale\b|caff[eè]|t[eè]\b|tisan", "secco"),
+    (r"biscott|cioccolat|merend|snack|patatine|caramell|torta|crostat|brioche|cornett|wafer|nutella|crema spalmabile"
+     r"|crema di|noci|mandorle|nocciole|pistacchi|arachidi", "dolci_snack"),
+    (r"olio|aceto|maionese|ketchup|senape|pesto|sugo|salsa|dado|spezie", "condimenti"),
+    (r"acqua|succo|nettare|bibita|coca|fanta|sprite|aranciata|birra|vino|th[eè] fredd|t[eè] alla", "bevande"),
+    (r"lasagn|pizza|piatto pronto|gastronomia|insalata di riso|tortellin|ravioli|gnocchi", "gastronomia"),
+]
+_INDIZI = [(re.compile(r, re.I), c) for r, c in INDIZI]
+
+
+def indovina(nome: str) -> str | None:
+    """Il tipo più probabile per un nome scritto a mano, o None se non ne ho idea."""
+    return next((c for r, c in _INDIZI if r.search(nome or "")), None)
+
+
 def categorie() -> list[dict]:
     return [{"chiave": k, "etichetta": v[0], "luogo": LUOGO_DEFAULT[k]} for k, v in TABELLA.items()]
 
@@ -127,7 +170,7 @@ def consumare_entro(p: dict) -> tuple[dt.date, str]:
         giorni = chiuso.get(luogo)
         fine = dt.date.fromisoformat(p["acquisto"]) + dt.timedelta(days=giorni if giorni is not None else 1)
         fonte = "stima"
-    if p.get("aperto"):
+    if p.get("aperto") and categoria(p.get("categoria")) not in SENZA_APERTO:
         inizio = dt.date.fromisoformat(p.get("aperto_il") or p["acquisto"])
         giorni = dopo_apertura if luogo != "freezer" else (chiuso.get("freezer") or dopo_apertura)
         if inizio + dt.timedelta(days=giorni) < fine:
@@ -142,7 +185,8 @@ def urgenza(giorni: int) -> str:
 def _vista(p: dict) -> dict:
     fine, fonte = consumare_entro(p)
     giorni = (fine - dt.date.fromisoformat(oggi())).days
-    return {**p, "pezzi": _pezzi(p), "etichetta_categoria": TABELLA[categoria(p.get("categoria"))][0], "entro": fine.isoformat(),
+    apribile = categoria(p.get("categoria")) not in SENZA_APERTO
+    return {**p, "pezzi": _pezzi(p), "quantita": _formato(p), "apribile": apribile, "aperto": bool(p.get("aperto")) and apribile, "etichetta_categoria": TABELLA[categoria(p.get("categoria"))][0], "entro": fine.isoformat(),
             "giorni": giorni, "urgenza": urgenza(giorni), "fonte": fonte}
 
 
@@ -167,10 +211,21 @@ def statistiche() -> dict:
 
 
 def _pezzi(p: dict) -> int:
+    """Quante confezioni uguali. Senza un numero (prodotti vecchi) lo ricava da una quantità tipo "2 pz"."""
     try:
-        return max(1, min(99, int(p.get("pezzi") or 1)))
+        n = int(p.get("pezzi") or 1)
     except (TypeError, ValueError):
-        return 1
+        n = 1
+    m = PZ.match(str(p.get("quantita") or ""))
+    if n == 1 and m:
+        n = int(m.group(1))
+    return max(1, min(99, n))
+
+
+def _formato(p: dict) -> str:
+    """La quantità "N pz" ripete il contatore ×N: la tolgo, resta solo il formato (es. 125 g)."""
+    q = str(p.get("quantita") or "")
+    return "" if PZ.match(q) else q
 
 
 def _nuovo(d: dict) -> dict:
@@ -183,7 +238,7 @@ def _nuovo(d: dict) -> dict:
     aperto = bool(d.get("aperto"))
     prezzo = d.get("prezzo")
     return {"id": uuid.uuid4().hex[:12], "nome": nome, "riga": str(d.get("riga") or "")[:120], "categoria": cat,
-            "luogo": luogo, "quantita": str(d.get("quantita") or "")[:40], "pezzi": _pezzi(d),
+            "luogo": luogo, "quantita": _formato(d)[:40], "pezzi": _pezzi(d),
             "prezzo": float(prezzo) if isinstance(prezzo, (int, float)) else None,
             "acquisto": min(acquisto, oggi()), "scadenza": _data(d.get("scadenza")), "aperto": aperto,
             "aperto_il": oggi() if aperto else None, "stato": "attivo",
@@ -217,13 +272,13 @@ def conferma(prodotti: list[dict], ricorda: bool = True) -> list[dict]:
     return [_vista(p) for p in nuovi]
 
 
-def _stacca(t: list[dict], p: dict) -> dict:
-    """Da una confezione con più pezzi (es. 2 mozzarelle) stacca un pezzo che diventa un prodotto a sé:
-    così se ne apri o finisci uno, l'altro resta chiuso con la sua scadenza."""
-    p["pezzi"] = _pezzi(p) - 1
-    uno = {**p, "id": uuid.uuid4().hex[:12], "pezzi": 1, "da": p["id"]}
-    t.append(uno)
-    return uno
+def _stacca(t: list[dict], p: dict, n: int = 1) -> dict:
+    """Da una confezione con più pezzi (es. 8 zucchine) stacca n pezzi che diventano un prodotto a sé:
+    così se ne usi 4, gli altri 4 restano in dispensa con la loro scadenza."""
+    p["pezzi"], p["quantita"] = _pezzi(p) - n, _formato(p)
+    parte = {**p, "id": uuid.uuid4().hex[:12], "pezzi": n, "da": p["id"]}
+    t.append(parte)
+    return parte
 
 
 def _riunisci(t: list[dict], p: dict) -> bool:
@@ -231,27 +286,27 @@ def _riunisci(t: list[dict], p: dict) -> bool:
     orig = next((x for x in t if x["id"] == p.get("da")), None)
     if not orig or orig.get("stato") != "attivo" or orig.get("aperto") or p.get("aperto"):
         return False
-    orig["pezzi"] = _pezzi(orig) + _pezzi(p)
+    orig["pezzi"], orig["quantita"] = _pezzi(orig) + _pezzi(p), _formato(orig)
     t.remove(p)
     return True
 
 
-def aggiorna(id_: str, uno: bool = False, **c) -> dict:
-    """Cambia stato, apertura, luogo o scadenza. Con uno=True e più pezzi, la modifica vale per un pezzo solo."""
+def aggiorna(id_: str, quanti: int = 0, **c) -> dict:
+    """Cambia stato, apertura, luogo o scadenza. Con quanti=n (meno dei pezzi), la modifica vale solo per n pezzi."""
     with _lock:
         t = _tutti()
         p = next((x for x in t if x["id"] == id_), None)
         if not p:
             raise ValueError("Prodotto non trovato.")
-        if uno and _pezzi(p) > 1 and p.get("stato") == "attivo":
-            p = _stacca(t, p)
+        if 0 < quanti < _pezzi(p) and p.get("stato") == "attivo":
+            p = _stacca(t, p, quanti)
         if c.get("stato") in STATI:
             p["stato"] = c["stato"]
             p["chiuso_il"] = oggi() if c["stato"] != "attivo" else None
             if c["stato"] == "attivo" and _riunisci(t, p):
                 _scrivi("prodotti", t)
                 return _vista(next(x for x in t if x["id"] == p["da"]))
-        if c.get("aperto") is not None:
+        if c.get("aperto") is not None and categoria(p.get("categoria")) not in SENZA_APERTO:
             p["aperto"] = bool(c["aperto"])
             p["aperto_il"] = oggi() if p["aperto"] else None
         if c.get("luogo") in LUOGHI:
@@ -365,7 +420,7 @@ def leggi_scontrino(immagine_b64: str | None = None, tipo: str = "image/jpeg", t
         cat = categoria(x.get("categoria"))
         r = {"riga": riga, "nome": str(x.get("nome") or riga)[:120], "categoria": cat,
              "luogo": x.get("luogo") if x.get("luogo") in LUOGHI else LUOGO_DEFAULT[cat],
-             "quantita": str(x.get("quantita") or "")[:40], "pezzi": _pezzi(x),
+             "quantita": _formato(x)[:40], "pezzi": _pezzi(x),
              "prezzo": x.get("prezzo") if isinstance(x.get("prezzo"), (int, float)) else None,
              "alimento": bool(x.get("alimento", True)),
              "sicurezza": x.get("sicurezza") if x.get("sicurezza") in ("alta", "media", "bassa") else "media",

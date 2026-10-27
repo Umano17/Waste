@@ -65,7 +65,12 @@ def test_fascia_oraria(monkeypatch, ora, aperta):
 
 def test_cestino_e_ripristino_via_api(client):
     p = client.post("/api/dispensa/prodotti", json={"nome": "Pane", "categoria": "pane", "pezzi": 2}, headers=MAC).get_json()
-    uno = client.post(f"/api/dispensa/prodotti/{p['id']}", json={"stato": "buttato", "uno": True}, headers=MAC).get_json()
+    uno = client.post(f"/api/dispensa/prodotti/{p['id']}", json={"stato": "buttato", "quanti": 1}, headers=MAC).get_json()
     assert [x["nome"] for x in client.get("/api/dispensa/cestino", headers=MAC).get_json()["prodotti"]] == ["Pane"]
     client.post(f"/api/dispensa/prodotti/{uno['id']}", json={"stato": "attivo"}, headers=MAC)
     assert client.get("/api/dispensa", headers=MAC).get_json()["prodotti"][0]["pezzi"] == 2
+
+
+def test_tipo_indovinato_dal_nome(client):
+    r = client.get("/api/dispensa/tipo?nome=tonno%20in%20scatola", headers=MAC).get_json()
+    assert r["categoria"] == "conserve"
