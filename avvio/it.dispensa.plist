@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- LaunchAgent di macOS: avvia la Dispensa quando accedi al Mac e la riavvia se si ferma.
+     Lo stop del Mac lo gestisce app.py: sveglio nella fascia DISPENSA_ORARIO, libero di dormire fuori.
+     __CARTELLA__ viene sostituita con il percorso vero da avvio/installa.sh -->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>it.dispensa</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__CARTELLA__/.venv/bin/python</string>
+    <string>__CARTELLA__/app.py</string>
+  </array>
+  <key>WorkingDirectory</key><string>__CARTELLA__</string>
+  <key>EnvironmentVariables</key><dict><key>PYTHONUNBUFFERED</key><string>1</string></dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>10</integer>
+  <key>StandardOutPath</key><string>__CARTELLA__/dati/dispensa.log</string>
+  <key>StandardErrorPath</key><string>__CARTELLA__/dati/dispensa.log</string>
+</dict>
+</plist>

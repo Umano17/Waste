@@ -511,11 +511,11 @@ def testo_riepilogo(urgenti: list[dict], ricette: list[dict]) -> str:
 
 def _impostazioni() -> dict:
     return {"mattino": os.getenv("DISPENSA_MATTINO", "si").lower() not in ("no", "0", "off"),
-            "ora": os.getenv("DISPENSA_ORA_MATTINO", "07:30")}
+            "ora": os.getenv("DISPENSA_ORA_MATTINO", "09:00")}
 
 
 def ciclo_mattino() -> None:
-    """Ogni minuto: all'ora del mattino (default 07:30), una volta al giorno, prepara le ricette se ci sono
+    """Ogni minuto: all'ora del mattino (default 09:00), una volta al giorno, prepara le ricette se ci sono
     prodotti urgenti e manda il riepilogo su Telegram. Solo se la dispensa non è vuota."""
     import time
     while True:

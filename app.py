@@ -7,6 +7,10 @@ Avvio:  python app.py
 from __future__ import annotations
 
 import os
+import shutil
+import subprocess
+import threading
+import time
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -22,7 +26,33 @@ PORTA = int(os.getenv("DISPENSA_PORTA", "8770"))
 HOST_AMMESSI = {f"127.0.0.1:{PORTA}", f"localhost:{PORTA}"}
 ORIGINI_AMMESSE = {f"http://{h}" for h in HOST_AMMESSI}
 
+ORARIO = os.getenv("DISPENSA_ORARIO", "09:00-20:00")   # fuori da questa fascia la Dispensa riposa
+
 app = Flask(__name__)
+
+
+def aperta() -> bool:
+    """True dentro la fascia oraria (es. 09:00-20:00, ora italiana). Vuoto o "sempre" = sempre aperta."""
+    if ORARIO.strip().lower() in ("", "sempre"):
+        return True
+    inizio, fine = (x.strip() for x in ORARIO.split("-", 1))
+    ora = dispensa.adesso().strftime("%H:%M")
+    return inizio <= ora < fine if inizio < fine else (ora >= inizio or ora < fine)
+
+
+def veglia() -> None:
+    """Nella fascia oraria tiene sveglio il Mac (anche a batteria) con caffeinate; fuori lo lascia dormire.
+    Lo schermo si spegne comunque. Solo su macOS."""
+    if not shutil.which("caffeinate"):
+        return
+    proc = None
+    while True:
+        if aperta() and (proc is None or proc.poll() is not None):
+            proc = subprocess.Popen(["caffeinate", "-i", "-w", str(os.getpid())])
+        elif not aperta() and proc is not None and proc.poll() is None:
+            proc.terminate()
+            proc = None
+        time.sleep(60)
 
 
 @app.before_request
@@ -39,6 +69,19 @@ def solo_da_questo_mac():
             abort(403)
         if origine is None and request.headers.get("Sec-Fetch-Site", "same-origin") not in ("same-origin", "none"):
             abort(403)
+
+
+@app.before_request
+def fascia_oraria():
+    if aperta() or request.path.startswith("/icone/"):
+        return None
+    testo = f"La Dispensa riposa: torna disponibile alle {ORARIO.split('-')[0].strip()}."
+    if request.path.startswith("/api/"):
+        return jsonify({"errore": testo}), 503
+    return (f'<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+            f'<title>Dispensa</title><body style="margin:0;min-height:100vh;display:grid;place-items:center;'
+            f'background:#16120F;color:#F3ECE4;font:18px -apple-system,sans-serif;text-align:center;padding:24px">'
+            f'<div><div style="font-size:48px">🌙</div><p>{testo}</p></div>', 503)
 
 
 def _errore(e, codice=400):
@@ -188,5 +231,7 @@ def togli_abbreviazione():
 
 if __name__ == "__main__":
     dispensa.avvia()      # riepilogo del mattino su Telegram, se configurato
+    threading.Thread(target=veglia, daemon=True).start()
+    print(f"Orario: {ORARIO}")
     print(f"Dispensa pronta: http://127.0.0.1:{PORTA}/dispensa")
     app.run(host="127.0.0.1", port=PORTA)   # 127.0.0.1 = raggiungibile solo da questo Mac (e da Tailscale)
