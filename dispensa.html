@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#FBFBFA">
 <link rel="apple-touch-icon" href="/icone/apple-touch-icon.png">
 <link rel="icon" href="/icone/favicon-32x32.png">
-<title>Dispensa · Jarvis</title>
+<title>Dispensa</title>
 <style>
 :root{
   --bg:#FBFBFA;--panel:#FFFFFF;--ink:#1C241E;--muted:#55655A;--line:#E2E8E4;--line2:#CBD5CE;
@@ -110,7 +110,7 @@ details summary{cursor:pointer;font-weight:600;min-height:36px;display:flex;alig
 <body>
 <header>
   <div class="top">
-    <h1><small>Jarvis</small>Dispensa</h1>
+    <h1>Dispensa</h1>
     <button class="btn sm" id="aggiorna" aria-label="Aggiorna">↻</button>
   </div>
   <div class="stats" id="stats"></div>
@@ -172,7 +172,7 @@ details summary{cursor:pointer;font-weight:600;min-height:36px;display:flex;alig
   <section class="sez" id="s-mattino" aria-label="Riepilogo">
     <div class="card"><h2>Riepilogo di oggi</h2><pre class="msg" id="riep"></pre></div>
     <button class="btn big" id="tg">Manda su Telegram</button>
-    <p class="muted" style="text-align:center">Ogni mattina il riepilogo arriva anche nel briefing di Jarvis.</p>
+    <p class="muted" style="text-align:center">Ogni mattina il riepilogo arriva su Telegram, se configurato.</p>
   </section>
 
   <p class="muted" style="text-align:center;margin-top:18px" id="avv">Le durate sono stime indicative: controlla sempre etichetta, odore e aspetto.</p>
@@ -188,7 +188,7 @@ details summary{cursor:pointer;font-weight:600;min-height:36px;display:flex;alig
 
 <div id="pin" role="dialog" aria-modal="true" aria-labelledby="pin-t">
   <div class="card">
-    <h2 id="pin-t">PIN di Jarvis</h2>
+    <h2 id="pin-t">PIN della Dispensa</h2>
     <p class="muted">Sei fuori dal Mac: inserisci il PIN (JARVIS_PIN). Questo telefono resterà riconosciuto per 30 giorni.</p>
     <input type="password" id="pin-v" inputmode="numeric" autocomplete="current-password" aria-label="PIN">
     <button class="btn pr big" id="pin-ok">Entra</button>

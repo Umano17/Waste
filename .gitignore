@@ -2,3 +2,5 @@ dati/
 .env
 __pycache__/
 _rif/
+.venv/
+.DS_Store

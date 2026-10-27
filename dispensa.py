@@ -1,10 +1,7 @@
-"""DISPENSA – progetto a parte (dal prototipo «Dispensa Intelligente», cartella ~/Dispensa-main).
+"""DISPENSA – logica dell'app (prodotti, scadenze, scontrini, ricette, riepilogo).
 
-Non è un reparto di Jarvis: non entra nel cervello, nel briefing né nella Sala controllo. Usa da Jarvis solo:
-  - il server, per servire la pagina /dispensa all'iPhone (via Tailscale + PIN, vedi accesso_remoto.py);
-  - il bot Telegram, per ricevere le foto degli scontrini e mandare il riepilogo del mattino;
-  - la chiave Anthropic e il registro dei costi (reparto «dispensa» nella scheda Uso).
-Si spegne del tutto con DISPENSA_ATTIVA=no nel file .env.
+App autonoma: il server è app.py, l'accesso dall'iPhone è in accesso.py (Tailscale + PIN),
+Claude è chiamato direttamente con l'SDK anthropic (ANTHROPIC_API_KEY nel file .env).
 
 Flusso: foto (o testo) dello scontrino → Claude legge le righe e interpreta le abbreviazioni → conferma
 (da telefono o da Telegram) → dispensa digitale con «da consumare entro» → ricette del giorno che usano prima
@@ -15,7 +12,7 @@ Regole:
     ha sempre la precedenza. Ogni testo per l'utente ricorda di controllare etichetta, odore e aspetto.
   - La foto dello scontrino non viene salvata: si legge e si butta.
   - Le abbreviazioni corrette dall'utente vengono ricordate per gli scontrini futuri («Ricomincia» le conserva).
-Dati in dati/dispensa/*.json (solo sul Mac).
+Dati in dati/*.json (solo sul Mac, fuori da git).
 """
 from __future__ import annotations
 
@@ -26,9 +23,12 @@ import re
 import threading
 import uuid
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 BASE = Path(__file__).parent
-DATI = BASE / "dati" / "dispensa"
+DATI = BASE / "dati"
+FUSO = ZoneInfo(os.getenv("DISPENSA_FUSO", "Europe/Rome"))
+MODELLO = os.getenv("DISPENSA_MODELLO", "claude-sonnet-5-5")
 _lock = threading.RLock()
 LUOGHI = ("frigo", "dispensa", "freezer")
 STATI = ("attivo", "consumato", "buttato")
@@ -91,9 +91,12 @@ def _scrivi(nome: str, dati) -> None:
     os.replace(tmp, _f(nome))
 
 
+def adesso() -> dt.datetime:
+    return dt.datetime.now(FUSO)
+
+
 def oggi() -> str:
-    import orario
-    return orario.oggi().isoformat()
+    return adesso().date().isoformat()
 
 
 def _data(v) -> str | None:
@@ -293,9 +296,9 @@ def attiva() -> bool:
 
 
 def _chiedi(system: str, contenuto, max_tokens: int, operatore: str, attivita: str):
-    import cervello
-    r = cervello.crea("dispensa", model=cervello.MODEL, max_tokens=max_tokens, system=system,
-                      messages=[{"role": "user", "content": contenuto}])
+    import anthropic
+    r = anthropic.Anthropic().messages.create(model=MODELLO, max_tokens=max_tokens, system=system,
+                                              messages=[{"role": "user", "content": contenuto}])
     return _json("".join(b.text for b in r.content if getattr(b, "type", "") == "text"))
 
 
@@ -477,7 +480,7 @@ def ciclo_mattino() -> None:
         try:
             imp = _impostazioni()
             stato = _leggi("stato", {})
-            if imp["mattino"] and __import__("orario").adesso().strftime("%H:%M") >= imp["ora"] and stato.get("mattino") != oggi():
+            if imp["mattino"] and adesso().strftime("%H:%M") >= imp["ora"] and stato.get("mattino") != oggi():
                 stato["mattino"] = oggi()
                 _scrivi("stato", stato)
                 prodotti = elenco()
@@ -487,8 +490,9 @@ def ciclo_mattino() -> None:
                             genera_ricette()
                         except Exception as e:
                             print("Dispensa, ricette del mattino:", e)
-                    from segreteria import notifica
-                    notifica("🥫 Dispensa – buongiorno!\n" + riepilogo()["testo"])
+                    from notifiche import configurato, notifica
+                    if configurato():
+                        notifica("🥫 Dispensa – buongiorno!\n" + riepilogo()["testo"])
         except Exception as e:
             print("Dispensa, mattino:", repr(e))
         time.sleep(60)
