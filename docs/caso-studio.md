@@ -1,4 +1,4 @@
-# Caso studio · Dispensa
+# Caso studio · Waste
 
 > App personale per non buttare cibo: dallo scontrino alla dispensa digitale, con scadenze stimate e ricette che usano per primo quello che sta per scadere.
 
@@ -28,7 +28,7 @@ Volevo uno strumento che:
 4. **Ricette del giorno.** Tre ricette mediterranee che usano prima gli ingredienti in scadenza; «L'ho cucinata» li toglie dalla dispensa.
 5. **Sempre a portata, ma privata.** Il server gira sul Mac di casa (avvio automatico, fascia oraria 9–20) e si apre dall'iPhone come un'app tramite la rete privata Tailscale, con PIN.
 
-![Dispensa sull'iPhone](schermata.png)
+![Waste sull'iPhone](schermata.png)
 
 ## Scelte tecniche e perché
 

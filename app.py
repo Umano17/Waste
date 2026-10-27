@@ -1,4 +1,4 @@
-"""Server della Dispensa: la pagina /dispensa e le API /api/dispensa/... (Flask).
+"""Server di Waste: la pagina /dispensa e le API /api/dispensa/... (Flask).
 
 Ascolta solo su 127.0.0.1: dal Mac si apre http://127.0.0.1:8770/dispensa,
 dall'iPhone passa da Tailscale con il PIN (vedi accesso.py).
@@ -26,7 +26,7 @@ PORTA = int(os.getenv("DISPENSA_PORTA", "8770"))
 HOST_AMMESSI = {f"127.0.0.1:{PORTA}", f"localhost:{PORTA}"}
 ORIGINI_AMMESSE = {f"http://{h}" for h in HOST_AMMESSI}
 
-ORARIO = os.getenv("DISPENSA_ORARIO", "09:00-20:00")   # fuori da questa fascia la Dispensa riposa
+ORARIO = os.getenv("DISPENSA_ORARIO", "09:00-20:00")   # fuori da questa fascia Waste riposa
 
 app = Flask(__name__)
 
@@ -75,11 +75,11 @@ def solo_da_questo_mac():
 def fascia_oraria():
     if aperta() or request.path.startswith("/icone/"):
         return None
-    testo = f"La Dispensa riposa: torna disponibile alle {ORARIO.split('-')[0].strip()}."
+    testo = f"Waste riposa: torna disponibile alle {ORARIO.split('-')[0].strip()}."
     if request.path.startswith("/api/"):
         return jsonify({"errore": testo}), 503
     return (f'<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            f'<title>Dispensa</title><body style="margin:0;min-height:100vh;display:grid;place-items:center;'
+            f'<title>Waste</title><body style="margin:0;min-height:100vh;display:grid;place-items:center;'
             f'background:#16120F;color:#F3ECE4;font:18px -apple-system,sans-serif;text-align:center;padding:24px">'
             f'<div><div style="font-size:48px">🌙</div><p>{testo}</p></div>', 503)
 
@@ -138,7 +138,7 @@ def scontrino():
     except ValueError as e:
         return _errore(e)
     except Exception as e:
-        print("Dispensa, scontrino:", repr(e))
+        print("Waste, scontrino:", repr(e))
         return _errore("Lettura non riuscita: riprova con una foto più nitida o incolla il testo.", 502)
 
 
@@ -198,7 +198,7 @@ def ricette():
     except ValueError as e:
         return _errore(e)
     except Exception as e:
-        print("Dispensa, ricette:", repr(e))
+        print("Waste, ricette:", repr(e))
         return _errore("Non sono riuscito a preparare le ricette: riprova tra poco.", 502)
 
 
@@ -217,7 +217,7 @@ def riepilogo():
     if request.method == "POST":
         import notifiche
         try:
-            notifiche.notifica("🥫 Dispensa\n" + r["testo"])
+            notifiche.notifica("🥫 Waste\n" + r["testo"])
         except Exception as e:
             return _errore(f"Invio non riuscito: {e}", 502)
         r["inviato"] = True
@@ -239,5 +239,5 @@ if __name__ == "__main__":
     dispensa.avvia()      # riepilogo del mattino su Telegram, se configurato
     threading.Thread(target=veglia, daemon=True).start()
     print(f"Orario: {ORARIO}")
-    print(f"Dispensa pronta: http://127.0.0.1:{PORTA}/dispensa")
+    print(f"Waste pronta: http://127.0.0.1:{PORTA}/dispensa")
     app.run(host="127.0.0.1", port=PORTA)   # 127.0.0.1 = raggiungibile solo da questo Mac (e da Tailscale)

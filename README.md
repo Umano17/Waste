@@ -1,8 +1,8 @@
-# Dispensa
+# Waste
 
 **La dispensa di casa sull'iPhone: fotografi lo scontrino, Claude legge le righe, l'app ti dice cosa usare per primo e propone ricette con quello che sta per scadere.**
 
-![Dispensa sull'iPhone](docs/schermata.png)
+![Waste sull'iPhone](docs/schermata.png)
 
 Progetto personale nato come reparto del mio assistente [Jarvis](#origine) e poi reso autonomo. → **[Caso studio](docs/caso-studio.md)**
 Gira sul Mac di casa e si apre dall'iPhone come un'app, anche fuori casa, senza esporre nulla a Internet.
@@ -16,7 +16,7 @@ Gira sul Mac di casa e si apre dall'iPhone come un'app, anche fuori casa, senza 
 - **Annulla e cestino**: ogni «finito» o «buttato» si annulla per 6 secondi; il cestino tiene gli ultimi 14 giorni e un pezzo ripescato torna nella sua confezione.
 - **Ricette del giorno**: 3 ricette mediterranee che usano per primi gli ingredienti in scadenza; «L'ho cucinata» li toglie dalla dispensa.
 - **Riepilogo del mattino** su Telegram (facoltativo).
-- **Fascia oraria** (default 9–20): fuori orario la Dispensa riposa e il Mac può andare in stop.
+- **Fascia oraria** (default 9–20): fuori orario Waste riposa e il Mac può andare in stop.
 
 ## Come funziona
 
@@ -44,12 +44,14 @@ Python 3.11 · Flask · Anthropic SDK (Claude) · HTML/CSS/JS senza framework ·
 ## Avvio sul Mac
 
 ```bash
-git clone https://github.com/Umano17/dispensa.git && cd dispensa
+git clone https://github.com/Umano17/Waste.git && cd Waste
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env      # inserisci ANTHROPIC_API_KEY e DISPENSA_PIN
 python app.py             # http://127.0.0.1:8770/dispensa
 ```
+
+> Il progetto si chiamava Dispensa: cartella, indirizzo `/dispensa` e variabili `DISPENSA_*` restano così, per non rompere installazioni e collegamenti già fatti.
 
 Avvio automatico all'accesso (LaunchAgent di macOS, si riavvia da solo se si blocca):
 
@@ -81,13 +83,13 @@ pytest -q
 ## Limiti
 
 - Un solo utente, nessun account: è pensata per una casa.
-- Funziona finché il Mac è acceso e sveglio; se dorme alle 9, la Dispensa riparte quando lo apri.
+- Funziona finché il Mac è acceso e sveglio; se dorme alle 9, Waste riparte quando lo apri.
 - Le durate sono stime indicative: controlla sempre etichetta, odore e aspetto.
 - La lettura degli scontrini dipende dalla qualità della foto e costa qualche centesimo per scontrino (API Claude).
 
 ## Origine
 
-Dispensa è nata da uno **studio di fattibilità** (mercato, costi per utente, aspetti legali) con un prototipo React + FastAPI (conservato nel ramo `emergent-v0`), poi è diventata un reparto di Jarvis, il mio assistente personale in Python. Qui è stata separata in un progetto autonomo: server proprio, accesso con PIN, test e avvio automatico.
+Waste (prima si chiamava Dispensa) è nata da uno **studio di fattibilità** (mercato, costi per utente, aspetti legali) con un prototipo React + FastAPI (conservato nel ramo `emergent-v0`), poi è diventata un reparto di Jarvis, il mio assistente personale in Python. Qui è stata separata in un progetto autonomo: server proprio, accesso con PIN, test e avvio automatico.
 
 ## Crediti
 
