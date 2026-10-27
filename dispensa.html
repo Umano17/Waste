@@ -5,45 +5,49 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Dispensa">
-<meta name="theme-color" content="#FBFBFA">
+<meta name="theme-color" content="#16120F">
 <link rel="apple-touch-icon" href="/icone/apple-touch-icon.png">
 <link rel="icon" href="/icone/favicon-32x32.png">
 <title>Dispensa</title>
 <style>
 :root{
-  --bg:#FBFBFA;--panel:#FFFFFF;--ink:#1C241E;--muted:#55655A;--line:#E2E8E4;--line2:#CBD5CE;
-  --acc:#1E7B4D;--acc-ink:#FFFFFF;--acc-soft:#ECFDF5;--amber:#D97706;--amber-soft:#FFFBEB;
-  --red:#B91C1C;--red-soft:#FEF2F2;--green:#15803D;--chip:#F4F6F4;
-  --r:14px;--sh:0 1px 2px rgba(20,36,27,.06),0 4px 14px rgba(20,36,27,.05);
+  /* solo tema scuro: le foto del cibo risaltano di più e il vetro resta leggibile; rosso/ambra/verde solo per l'urgenza */
+  color-scheme:dark;
+  --bg:#16120F;--panel:#211B17;--ink:#F3ECE4;--muted:#B3A597;--line:#332A23;--line2:#45392F;
+  --acc:#E08A5F;--acc-ink:#1B0F08;--acc-soft:#3A2418;--amber:#F0B54A;--amber-soft:#33270F;
+  --red:#F28B82;--red-soft:#3A1A17;--green:#8CC47F;--green-soft:#1E2E1B;--chip:#2A221C;--sh:none;--vetro:rgba(28,22,18,.52);--vetro-forte:rgba(28,22,18,.66);--vetro-bordo:rgba(255,255,255,.14);--vetro-luce:rgba(255,255,255,.18);
+  --sfondo:radial-gradient(120% 60% at 0% 0%,#3A2216 0%,transparent 60%),radial-gradient(90% 50% at 100% 100%,#1F2A19 0%,transparent 60%),#16120F;
+  --serif:ui-serif,"New York","Iowan Old Style",Georgia,serif;--r:18px;
 }
-@media (prefers-color-scheme:dark){:root{
-  --bg:#0F1712;--panel:#16211A;--ink:#EEF4F0;--muted:#9EB3A6;--line:#25352B;--line2:#33463A;
-  --acc:#34A26B;--acc-ink:#06130B;--acc-soft:#123222;--amber:#F0A53A;--amber-soft:#2B2210;
-  --red:#F07171;--red-soft:#2E1414;--green:#6BD69A;--chip:#1C2A21;--sh:none}}
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
+html{background:var(--bg);background:var(--sfondo)}
+body{background:transparent}
+html,body{margin:0;color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
 body{padding:env(safe-area-inset-top) 0 calc(78px + env(safe-area-inset-bottom))}
 button,input,select,textarea{font:inherit;color:inherit}
-header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:var(--foto,url(/icone/motivo.svg)) center/cover no-repeat;pointer-events:none}  /* fisso anche su iPhone, dove background-attachment:fixed non funziona */
+header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 55%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:14px 16px 10px;border-bottom:1px solid var(--line)}
 .top{display:flex;align-items:center;justify-content:space-between;gap:10px}
-h1{font-size:24px;margin:0;letter-spacing:-.02em}
+h1{font-family:var(--serif);font-size:30px;font-weight:700;margin:0;letter-spacing:-.01em;line-height:1.1}
+h1 .data{display:block;font-family:inherit;font-size:13px;font-weight:600;letter-spacing:.02em;color:var(--muted);margin-top:2px;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
 h1 small{display:block;font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
 .stats{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-.st{background:var(--chip);border-radius:999px;padding:4px 10px;font-size:13px;color:var(--muted)}
+.st{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:4px 11px;font-size:13px;color:var(--muted)}
 .st b{color:var(--ink)}
-.st.red b{color:var(--red)}
+.st.red{background:var(--red-soft);border-color:transparent}.st.red b{color:var(--red)}
 main{padding:14px 16px;max-width:680px;margin:0 auto}
 .sez{display:none}.sez.on{display:block}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px;box-shadow:var(--sh)}
-.card h2{font-size:18px;margin:0 0 6px;letter-spacing:-.01em}
+.card h2{font-family:var(--serif);font-size:21px;margin:0 0 6px}
 .muted{color:var(--muted);font-size:14px}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 16px;border-radius:12px;border:1px solid var(--line2);background:var(--panel);font-weight:600;cursor:pointer;touch-action:manipulation}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 16px;border-radius:14px;transition:transform .1s;border:1px solid var(--line2);background:var(--panel);font-weight:600;cursor:pointer;touch-action:manipulation}
 .btn.pr{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
 .btn.big{width:100%;min-height:54px;font-size:17px}
 .btn.sm{min-height:36px;padding:0 12px;font-size:14px;border-radius:10px}
 .btn.warn{color:var(--red);border-color:color-mix(in srgb,var(--red) 40%,var(--line2))}
+.btn:active{transform:scale(.97)}
 .btn:disabled{opacity:.55}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .row>*{flex:1 1 auto}
@@ -56,16 +60,16 @@ textarea{min-height:110px;resize:vertical}
 .seg button.on{background:var(--panel);color:var(--ink);box-shadow:var(--sh)}
 .chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:none}
 .chips button{flex:0 0 auto;min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line2);background:var(--panel);font-size:14px;font-weight:600}
-.chips button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chips button.on{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
 .item{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line)}
 .item:first-child{border-top:0}
 .dot{flex:0 0 10px;height:10px;border-radius:50%;margin-top:7px}
 .dot.rosso{background:var(--red)}.dot.giallo{background:var(--amber)}.dot.verde{background:var(--green)}
 .item .t{flex:1;min-width:0}
-.item .n{font-weight:650;word-break:break-word}
+.item .n{font-weight:650;font-size:17px;word-break:break-word}
 .item .m{font-size:13px;color:var(--muted)}
-.quando{font-size:13px;font-weight:700;white-space:nowrap}
-.quando.rosso{color:var(--red)}.quando.giallo{color:var(--amber)}.quando.verde{color:var(--green)}
+.quando{font-size:12px;font-weight:700;white-space:nowrap;padding:3px 9px;border-radius:999px}
+.quando.rosso{color:var(--red);background:var(--red-soft)}.quando.giallo{color:var(--amber);background:var(--amber-soft)}.quando.verde{color:var(--green);background:var(--green-soft)}
 .az{display:flex;gap:6px;margin-top:8px}
 .az .btn.sm{padding:0 10px;font-size:13px;min-height:34px;flex:0 0 auto}
 .badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:999px;background:var(--chip);color:var(--muted);vertical-align:2px}
@@ -78,9 +82,11 @@ textarea{min-height:110px;resize:vertical}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .chk{display:flex;align-items:center;gap:8px;font-weight:600}
 .chk input{width:22px;height:22px;accent-color:var(--acc)}
-.gruppo{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin:16px 0 6px}
+.gruppo{display:table;font-family:var(--serif);font-size:18px;font-weight:700;margin:18px 0 8px;padding:4px 14px;border-radius:999px;background:color-mix(in srgb,var(--panel) 88%,transparent);box-shadow:var(--sh)}
+/* testi fuori dalle schede: un velo dietro per restare leggibili sopra il motivo */
+main>.sez>p.muted,main>p.muted{background:color-mix(in srgb,var(--panel) 80%,transparent);border-radius:12px;padding:6px 10px}
 .gruppo.rosso{color:var(--red)}.gruppo.giallo{color:var(--amber)}.gruppo.verde{color:var(--green)}
-.ric h3{margin:0 0 4px;font-size:18px}
+.ric h3{font-family:var(--serif);margin:0 0 4px;font-size:21px}
 .ric ol{padding-left:20px;margin:8px 0}
 .ric li{margin:4px 0}
 .ing{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
@@ -108,12 +114,32 @@ details summary{cursor:pointer;font-weight:600;min-height:36px;display:flex;alig
 .scad-ed{margin-top:8px;display:flex;gap:6px;align-items:center}
 .scad-ed input{flex:1}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+/* ---------- vetro liquido: la foto resta nitida ai bordi e si sfoca solo dentro le schede */
+main{padding:18px 22px}
+.vetro,.card,.gruppo,#lista .item,#linea .item,#cestino-l .item,header,nav,.st,.chips button,.btn:not(.pr){
+  background:var(--vetro);-webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%);
+  border:1px solid var(--vetro-bordo);box-shadow:inset 0 1px 0 var(--vetro-luce),0 8px 24px rgba(30,20,10,.14)}
+header{border-width:0 0 1px;box-shadow:none}
+nav{border-width:1px 0 0;box-shadow:none}
+.btn:not(.pr){box-shadow:inset 0 1px 0 var(--vetro-luce)}
+.btn.warn{border-color:color-mix(in srgb,var(--red) 45%,transparent)}
+.chips button.on{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+/* elenchi: ogni prodotto è una lastra di vetro a sé, con spazio intorno per vedere la foto */
+#lista.card,#linea .card,#cestino-l{background:none;border:0;box-shadow:none;padding:0;-webkit-backdrop-filter:none;backdrop-filter:none}
+#lista .item,#linea .item,#cestino-l .item{border-radius:20px;padding:14px 16px;margin:0 0 12px}
+#lista .item:first-child,#linea .item:first-child{border-top:1px solid var(--vetro-bordo)}
+.card .card{background:var(--vetro-forte)}
+input[type=text],input[type=date],input[type=password],input[type=number],select,textarea{background:var(--vetro-forte)}
+.gruppo{background:var(--vetro-forte)}
+h1 .data{color:var(--ink);opacity:.8}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .card,.gruppo,#lista .item,#linea .item,#cestino-l .item,header,nav{background:var(--panel)}}
 </style>
 </head>
 <body>
 <header>
   <div class="top">
-    <h1>Dispensa</h1>
+    <h1>Dispensa<span class="data" id="oggi"></span></h1>
     <button class="btn sm" id="aggiorna" aria-label="Aggiorna">↻</button>
   </div>
   <div class="stats" id="stats"></div>
@@ -263,14 +289,14 @@ function disegnaFiltri(){var f=[['tutti','Tutti']].concat(LUOGHI);
   $('filtri').innerHTML=f.map(function(x){var n=x[0]==='tutti'?S.prodotti.length:S.prodotti.filter(function(p){return p.luogo===x[0]}).length;
     return '<button data-f="'+x[0]+'" class="'+(S.filtro===x[0]?'on':'')+'">'+x[1]+' · '+n+'</button>'}).join('')}
 $('filtri').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;S.filtro=b.dataset.f;disegnaLista()});
-function voce(p,azioni){
+function voce(p,azioni,conData){
   return '<div class="item" data-id="'+p.id+'"><span class="dot '+p.urgenza+'" aria-hidden="true"></span><div class="t">'+
   '<div class="n">'+esc(p.nome)+(p.pezzi>1?' <span class="badge">×'+p.pezzi+'</span>':'')+(p.aperto?' <span class="badge amb">aperto</span>':'')+'</div>'+
   '<div class="m">'+esc([p.quantita,LUOGHI.filter(function(l){return l[0]===p.luogo})[0][1],p.scadenza?'scad. '+dataIt(p.scadenza):'stima'].filter(Boolean).join(' · '))+'</div>'+
   (azioni?'<div class="az">'+(p.aperto?'<button class="btn sm" data-a="aperto">Chiuso</button>':'<button class="btn sm" data-a="aperto">'+(p.pezzi>1?'Apri 1':'Aperto')+'</button>')+
     '<button class="btn sm" data-a="consumato">'+(p.pezzi>1?'✓ 1 finito':'✓ Finito')+'</button><button class="btn sm warn" data-a="buttato">'+(p.pezzi>1?'Butta 1':'Buttato')+'</button>'+
     '<button class="btn sm" data-a="scad" aria-label="Cambia scadenza">📅</button></div>':'')+
-  '</div><span class="quando '+p.urgenza+'">'+quando(p.giorni)+'</span></div>'}
+  '</div><span class="quando '+p.urgenza+'">'+quando(p.giorni)+(conData?' · '+dataIt(p.entro):'')+'</span></div>'}
 function disegnaLista(){disegnaFiltri();
   var l=S.prodotti.filter(function(p){return S.filtro==='tutti'||p.luogo===S.filtro});
   $('lista').innerHTML=l.length?l.map(function(p){return voce(p,true)}).join(''):'<div class="vuoto">Niente qui. Fotografa uno scontrino o aggiungi a mano.</div>'}
@@ -303,7 +329,7 @@ function disegnaLinea(){
   var tit={rosso:'Da usare entro 2 giorni',giallo:'Entro 5 giorni',verde:'Con calma'};
   $('linea').innerHTML=['rosso','giallo','verde'].filter(function(k){return g[k].length}).map(function(k){
     return '<div class="gruppo '+k+'">'+tit[k]+' · '+g[k].length+'</div><div class="card">'+g[k].map(function(p){
-      return voce(p,false).replace('</span></div>',' · '+dataIt(p.entro)+'</span></div>')}).join('')+'</div>'}).join('')}
+      return voce(p,false,true)}).join('')+'</div>'}).join('')}
 
 /* ---------- aggiunta a mano */
 function preparaManuale(){if($('m-cat').options.length)return;$('m-cat').innerHTML=catOpt('verdura');$('m-luogo').outerHTML=seg('m',S.luogoM).replace('data-seg="m"','data-seg="m" id="m-luogo"');
@@ -383,6 +409,10 @@ $('tg').onclick=function(){var b=this;b.disabled=true;api('/api/dispensa/riepilo
 $('aggiorna').onclick=function(){carica();toast('Aggiornato')};
 
 /* ---------- avvio */
+/* sfondo: una foto diversa ogni settimana, a turno (foto Unsplash, autori nel README) */
+(function(){var FOTO=3,settimana=Math.floor((Date.now()/864e5+3)/7);
+  document.documentElement.style.setProperty('--foto','url(/icone/sfondo'+(settimana%FOTO+1)+'.webp)')})();
+try{var g=new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});$('oggi').textContent=g.charAt(0).toUpperCase()+g.slice(1)}catch(e){}
 var q=new URLSearchParams(location.search),bz=q.get('bozza');
 carica().then(function(){
   if(bz){api('/api/dispensa/bozza/'+encodeURIComponent(bz)).then(function(b){S.letto=b;S.bozza=bz;vai('scontrino');mostraConferma()}).catch(function(e){toast(e.message)});return}
