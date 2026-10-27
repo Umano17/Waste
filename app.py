@@ -124,9 +124,15 @@ def aggiungi():
 def aggiorna(id_):
     d = request.get_json(silent=True) or {}
     try:
-        return jsonify(dispensa.aggiorna(id_, **{k: d.get(k) for k in ("stato", "aperto", "luogo", "scadenza", "togli_scadenza")}))
+        return jsonify(dispensa.aggiorna(id_, uno=bool(d.get("uno")),
+                                         **{k: d.get(k) for k in ("stato", "aperto", "luogo", "scadenza", "togli_scadenza")}))
     except ValueError as e:
         return _errore(e, 404)
+
+
+@app.route("/api/dispensa/cestino")
+def cestino():
+    return jsonify({"prodotti": dispensa.cestino()})
 
 
 @app.route("/api/dispensa/ricomincia", methods=["POST"])

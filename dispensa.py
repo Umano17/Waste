@@ -141,8 +141,8 @@ def urgenza(giorni: int) -> str:
 
 def _vista(p: dict) -> dict:
     fine, fonte = consumare_entro(p)
-    giorni = (fine - dt.date.today()).days
-    return {**p, "etichetta_categoria": TABELLA[categoria(p.get("categoria"))][0], "entro": fine.isoformat(),
+    giorni = (fine - dt.date.fromisoformat(oggi())).days
+    return {**p, "pezzi": _pezzi(p), "etichetta_categoria": TABELLA[categoria(p.get("categoria"))][0], "entro": fine.isoformat(),
             "giorni": giorni, "urgenza": urgenza(giorni), "fonte": fonte}
 
 
@@ -166,6 +166,13 @@ def statistiche() -> dict:
             "urgenti": sum(1 for p in attivi if p["urgenza"] == "rosso")}
 
 
+def _pezzi(p: dict) -> int:
+    try:
+        return max(1, min(99, int(p.get("pezzi") or 1)))
+    except (TypeError, ValueError):
+        return 1
+
+
 def _nuovo(d: dict) -> dict:
     cat = categoria(d.get("categoria"))
     luogo = d.get("luogo") if d.get("luogo") in LUOGHI else LUOGO_DEFAULT[cat]
@@ -176,7 +183,7 @@ def _nuovo(d: dict) -> dict:
     aperto = bool(d.get("aperto"))
     prezzo = d.get("prezzo")
     return {"id": uuid.uuid4().hex[:12], "nome": nome, "riga": str(d.get("riga") or "")[:120], "categoria": cat,
-            "luogo": luogo, "quantita": str(d.get("quantita") or "")[:40],
+            "luogo": luogo, "quantita": str(d.get("quantita") or "")[:40], "pezzi": _pezzi(d),
             "prezzo": float(prezzo) if isinstance(prezzo, (int, float)) else None,
             "acquisto": min(acquisto, oggi()), "scadenza": _data(d.get("scadenza")), "aperto": aperto,
             "aperto_il": oggi() if aperto else None, "stato": "attivo",
@@ -210,15 +217,40 @@ def conferma(prodotti: list[dict], ricorda: bool = True) -> list[dict]:
     return [_vista(p) for p in nuovi]
 
 
-def aggiorna(id_: str, **c) -> dict:
+def _stacca(t: list[dict], p: dict) -> dict:
+    """Da una confezione con più pezzi (es. 2 mozzarelle) stacca un pezzo che diventa un prodotto a sé:
+    così se ne apri o finisci uno, l'altro resta chiuso con la sua scadenza."""
+    p["pezzi"] = _pezzi(p) - 1
+    uno = {**p, "id": uuid.uuid4().hex[:12], "pezzi": 1, "da": p["id"]}
+    t.append(uno)
+    return uno
+
+
+def _riunisci(t: list[dict], p: dict) -> bool:
+    """Un pezzo ripescato dal cestino torna nella sua confezione, se questa è ancora in casa e chiusa come lui."""
+    orig = next((x for x in t if x["id"] == p.get("da")), None)
+    if not orig or orig.get("stato") != "attivo" or orig.get("aperto") or p.get("aperto"):
+        return False
+    orig["pezzi"] = _pezzi(orig) + _pezzi(p)
+    t.remove(p)
+    return True
+
+
+def aggiorna(id_: str, uno: bool = False, **c) -> dict:
+    """Cambia stato, apertura, luogo o scadenza. Con uno=True e più pezzi, la modifica vale per un pezzo solo."""
     with _lock:
         t = _tutti()
         p = next((x for x in t if x["id"] == id_), None)
         if not p:
             raise ValueError("Prodotto non trovato.")
+        if uno and _pezzi(p) > 1 and p.get("stato") == "attivo":
+            p = _stacca(t, p)
         if c.get("stato") in STATI:
             p["stato"] = c["stato"]
             p["chiuso_il"] = oggi() if c["stato"] != "attivo" else None
+            if c["stato"] == "attivo" and _riunisci(t, p):
+                _scrivi("prodotti", t)
+                return _vista(next(x for x in t if x["id"] == p["da"]))
         if c.get("aperto") is not None:
             p["aperto"] = bool(c["aperto"])
             p["aperto_il"] = oggi() if p["aperto"] else None
@@ -230,6 +262,13 @@ def aggiorna(id_: str, **c) -> dict:
             p["scadenza"] = None
         _scrivi("prodotti", t)
     return _vista(p)
+
+
+def cestino(giorni: int = 14) -> list[dict]:
+    """Prodotti finiti o buttati negli ultimi giorni, dal più recente: da qui si possono ripescare."""
+    da = (dt.date.fromisoformat(oggi()) - dt.timedelta(days=giorni)).isoformat()
+    chiusi = [p for p in _tutti() if p.get("stato") in ("consumato", "buttato") and (p.get("chiuso_il") or "") >= da]
+    return [_vista(p) for p in sorted(chiusi, key=lambda x: (x.get("chiuso_il") or ""), reverse=True)]
 
 
 def trova(nome: str) -> list[dict]:
@@ -277,8 +316,9 @@ Luoghi ammessi: frigo, dispensa, freezer.
 JSON:
 {{"negozio": "nome o null", "data": "YYYY-MM-DD o null",
  "righe": [{{"riga": "testo esatto della riga", "nome": "nome completo e chiaro in italiano",
-  "categoria": "una categoria ammessa", "luogo": "frigo|dispensa|freezer", "quantita": "es. 125 g, 1 L, 6 pz",
+  "categoria": "una categoria ammessa", "luogo": "frigo|dispensa|freezer", "quantita": "peso o formato di UN pezzo, es. 125 g, 1 L", "pezzi": 1,
   "prezzo": 1.29, "alimento": true, "sicurezza": "alta|media|bassa"}}]}}
+pezzi = quante confezioni uguali (es. 2 x mozzarella → 2; una confezione da 6 uova → 1).
 sicurezza "bassa" quando l'abbreviazione è ambigua; alimento=false per detersivi, sacchetti e non alimentari."""
 
 
@@ -325,7 +365,7 @@ def leggi_scontrino(immagine_b64: str | None = None, tipo: str = "image/jpeg", t
         cat = categoria(x.get("categoria"))
         r = {"riga": riga, "nome": str(x.get("nome") or riga)[:120], "categoria": cat,
              "luogo": x.get("luogo") if x.get("luogo") in LUOGHI else LUOGO_DEFAULT[cat],
-             "quantita": str(x.get("quantita") or "")[:40],
+             "quantita": str(x.get("quantita") or "")[:40], "pezzi": _pezzi(x),
              "prezzo": x.get("prezzo") if isinstance(x.get("prezzo"), (int, float)) else None,
              "alimento": bool(x.get("alimento", True)),
              "sicurezza": x.get("sicurezza") if x.get("sicurezza") in ("alta", "media", "bassa") else "media",
@@ -431,8 +471,10 @@ def cucinata(id_ricetta: str, ids_prodotti: list[str] | None = None) -> dict:
         _scrivi("ricette", tutte)
         ids = set(ids_prodotti if ids_prodotti is not None else [g["id"] for g in r["ingredienti"] if g.get("id")])
         t = _tutti()
-        for p in t:
+        for p in list(t):
             if p["id"] in ids and p["stato"] == "attivo":
+                if _pezzi(p) > 1:
+                    p = _stacca(t, p)
                 p["stato"], p["chiuso_il"] = "consumato", oggi()
         _scrivi("prodotti", t)
     return r

@@ -104,6 +104,9 @@ nav button.on{color:var(--acc)}
 #pin input{text-align:center;font-size:24px;letter-spacing:.4em;margin:12px 0}
 .vuoto{text-align:center;padding:26px 10px;color:var(--muted)}
 details summary{cursor:pointer;font-weight:600;min-height:36px;display:flex;align-items:center}
+.toast button{pointer-events:auto;margin-left:12px;background:none;border:0;color:inherit;font-weight:700;text-decoration:underline;cursor:pointer}
+.scad-ed{margin-top:8px;display:flex;gap:6px;align-items:center}
+.scad-ed input{flex:1}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 </style>
 </head>
@@ -150,8 +153,15 @@ details summary{cursor:pointer;font-weight:600;min-height:36px;display:flex;alig
         <label class="f" for="m-nome">Prodotto</label><input type="text" id="m-nome" placeholder="es. Zucchine">
         <label class="f" for="m-cat">Tipo</label><select id="m-cat"></select>
         <label class="f">Dove</label><div class="seg" id="m-luogo"></div>
+        <label class="f" for="m-pezzi">Pezzi uguali</label><input type="number" id="m-pezzi" min="1" max="99" value="1" inputmode="numeric">
         <label class="f" for="m-scad">Scadenza sull'etichetta (facoltativa)</label><input type="date" id="m-scad">
         <button class="btn pr big" id="m-ok" style="margin-top:12px">Aggiungi</button>
+      </details>
+    </div>
+    <div class="card">
+      <details id="cestino">
+        <summary>🗑 Finiti e buttati (ultimi 14 giorni)</summary>
+        <div id="cestino-l"></div>
       </details>
     </div>
     <button class="btn warn big" id="ricomincia">Ricomincia da zero</button>
@@ -189,7 +199,7 @@ details summary{cursor:pointer;font-weight:600;min-height:36px;display:flex;alig
 <div id="pin" role="dialog" aria-modal="true" aria-labelledby="pin-t">
   <div class="card">
     <h2 id="pin-t">PIN della Dispensa</h2>
-    <p class="muted">Sei fuori dal Mac: inserisci il PIN (JARVIS_PIN). Questo telefono resterà riconosciuto per 30 giorni.</p>
+    <p class="muted">Sei fuori dal Mac: inserisci il PIN (DISPENSA_PIN). Questo telefono resterà riconosciuto per 30 giorni.</p>
     <input type="password" id="pin-v" inputmode="numeric" autocomplete="current-password" aria-label="PIN">
     <button class="btn pr big" id="pin-ok">Entra</button>
     <p class="muted" id="pin-err" role="alert"></p>
@@ -204,7 +214,9 @@ var $=function(id){return document.getElementById(id)};
 var S={prodotti:[],categorie:[],stat:{},filtro:'tutti',luogoM:'frigo',letto:null,bozza:null,ricette:[]};
 var LUOGHI=[['frigo','Frigo'],['dispensa','Dispensa'],['freezer','Freezer']];
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
-function toast(t){var e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.k);toast.k=setTimeout(function(){e.classList.remove('on')},3200)}
+function toast(t,azione,fn){var e=$('toast');e.textContent=t;
+  if(azione){var b=document.createElement('button');b.textContent=azione;b.onclick=function(){e.classList.remove('on');fn()};e.appendChild(b)}
+  e.classList.add('on');clearTimeout(toast.k);toast.k=setTimeout(function(){e.classList.remove('on')},azione?6000:3200)}
 function api(url,dati){
   var o={credentials:'same-origin',headers:{}};
   if(dati!==undefined){o.method='POST';o.headers['Content-Type']='application/json';o.body=JSON.stringify(dati)}
@@ -253,17 +265,36 @@ function disegnaFiltri(){var f=[['tutti','Tutti']].concat(LUOGHI);
 $('filtri').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;S.filtro=b.dataset.f;disegnaLista()});
 function voce(p,azioni){
   return '<div class="item" data-id="'+p.id+'"><span class="dot '+p.urgenza+'" aria-hidden="true"></span><div class="t">'+
-  '<div class="n">'+esc(p.nome)+(p.aperto?' <span class="badge amb">aperto</span>':'')+'</div>'+
-  '<div class="m">'+esc([p.quantita,LUOGHI.filter(function(l){return l[0]===p.luogo})[0][1],p.fonte==='etichetta'?'scad. '+dataIt(p.scadenza):'stima'].filter(Boolean).join(' · '))+'</div>'+
-  (azioni?'<div class="az"><button class="btn sm" data-a="aperto">'+(p.aperto?'Chiuso':'Aperto')+'</button><button class="btn sm" data-a="consumato">✓ Finito</button><button class="btn sm warn" data-a="buttato">Buttato</button></div>':'')+
+  '<div class="n">'+esc(p.nome)+(p.pezzi>1?' <span class="badge">×'+p.pezzi+'</span>':'')+(p.aperto?' <span class="badge amb">aperto</span>':'')+'</div>'+
+  '<div class="m">'+esc([p.quantita,LUOGHI.filter(function(l){return l[0]===p.luogo})[0][1],p.scadenza?'scad. '+dataIt(p.scadenza):'stima'].filter(Boolean).join(' · '))+'</div>'+
+  (azioni?'<div class="az">'+(p.aperto?'<button class="btn sm" data-a="aperto">Chiuso</button>':'<button class="btn sm" data-a="aperto">'+(p.pezzi>1?'Apri 1':'Aperto')+'</button>')+
+    '<button class="btn sm" data-a="consumato">'+(p.pezzi>1?'✓ 1 finito':'✓ Finito')+'</button><button class="btn sm warn" data-a="buttato">'+(p.pezzi>1?'Butta 1':'Buttato')+'</button>'+
+    '<button class="btn sm" data-a="scad" aria-label="Cambia scadenza">📅</button></div>':'')+
   '</div><span class="quando '+p.urgenza+'">'+quando(p.giorni)+'</span></div>'}
 function disegnaLista(){disegnaFiltri();
   var l=S.prodotti.filter(function(p){return S.filtro==='tutti'||p.luogo===S.filtro});
   $('lista').innerHTML=l.length?l.map(function(p){return voce(p,true)}).join(''):'<div class="vuoto">Niente qui. Fotografa uno scontrino o aggiungi a mano.</div>'}
 $('lista').addEventListener('click',function(e){var b=e.target.closest('button[data-a]');if(!b)return;
-  var id=b.closest('.item').dataset.id,a=b.dataset.a,p=S.prodotti.filter(function(x){return x.id===id})[0];
-  var dati=a==='aperto'?{aperto:!p.aperto}:{stato:a};b.disabled=true;
-  api('/api/dispensa/prodotti/'+id,dati).then(function(){toast(a==='aperto'?'Aggiornato':a==='consumato'?'Segnato come finito':'Segnato come buttato');carica()}).catch(function(e){b.disabled=false;toast(e.message)})});
+  var it=b.closest('.item'),id=it.dataset.id,a=b.dataset.a,p=S.prodotti.filter(function(x){return x.id===id})[0];
+  if(a==='scad'){apriScadenza(it,p);return}
+  var dati=a==='aperto'?{aperto:!p.aperto,uno:!p.aperto}:{stato:a,uno:true};b.disabled=true;
+  api('/api/dispensa/prodotti/'+id,dati).then(function(r){carica();
+    if(a==='aperto'){toast('Aggiornato');return}
+    toast((a==='consumato'?'Finito: ':'Buttato: ')+p.nome,'Annulla',function(){ripristina(r.id)})}).catch(function(e){b.disabled=false;toast(e.message)})});
+function apriScadenza(it,p){var t=it.querySelector('.t');if(t.querySelector('.scad-ed'))return;
+  var d=document.createElement('div');d.className='scad-ed';
+  d.innerHTML='<input type="date" aria-label="Scadenza sull\'etichetta" value="'+esc(p.scadenza||'')+'"><button class="btn sm pr">Salva</button>'+(p.scadenza?'<button class="btn sm">Togli</button>':'');
+  t.appendChild(d);var bs=d.querySelectorAll('button');
+  bs[0].onclick=function(){var v=d.querySelector('input').value;if(!v){toast('Scegli una data');return}
+    api('/api/dispensa/prodotti/'+p.id,{scadenza:v}).then(function(){toast('Scadenza aggiornata');carica()}).catch(function(e){toast(e.message)})};
+  if(bs[1])bs[1].onclick=function(){api('/api/dispensa/prodotti/'+p.id,{togli_scadenza:true}).then(function(){toast('Torno alla stima');carica()}).catch(function(e){toast(e.message)})}}
+function ripristina(id){api('/api/dispensa/prodotti/'+id,{stato:'attivo'}).then(function(){toast('Rimesso in dispensa');carica();if($('cestino').open)caricaCestino()}).catch(function(e){toast(e.message)})}
+function caricaCestino(){api('/api/dispensa/cestino').then(function(r){
+  $('cestino-l').innerHTML=r.prodotti.length?r.prodotti.map(function(p){
+    return '<div class="item" data-id="'+p.id+'"><div class="t"><div class="n">'+esc(p.nome)+' <span class="badge">'+(p.stato==='buttato'?'buttato':'finito')+' il '+dataIt(p.chiuso_il)+'</span></div>'+
+    '<div class="az"><button class="btn sm" data-rip>↩ Ripristina</button></div></div></div>'}).join(''):'<div class="vuoto">Niente negli ultimi 14 giorni.</div>'}).catch(function(e){toast(e.message)})}
+$('cestino').addEventListener('toggle',function(){if(this.open)caricaCestino()});
+$('cestino-l').addEventListener('click',function(e){var b=e.target.closest('[data-rip]');if(!b)return;b.disabled=true;ripristina(b.closest('.item').dataset.id)});
 
 /* ---------- linea del tempo */
 function disegnaLinea(){
@@ -281,8 +312,8 @@ function scegliSeg(el,v){el.querySelectorAll('button').forEach(function(b){b.cla
 function valSeg(el){var b=el.querySelector('button.on');return b?b.dataset.v:'dispensa'}
 document.addEventListener('click',function(e){var b=e.target.closest('.seg button');if(b)scegliSeg(b.parentNode,b.dataset.v)});
 $('m-ok').onclick=function(){var n=$('m-nome').value.trim();if(!n){toast('Scrivi il nome del prodotto');return}
-  api('/api/dispensa/prodotti',{nome:n,categoria:$('m-cat').value,luogo:valSeg($('m-luogo')),scadenza:$('m-scad').value||null})
-  .then(function(){$('m-nome').value='';$('m-scad').value='';toast('Aggiunto: '+n);carica()}).catch(function(e){toast(e.message)})};
+  api('/api/dispensa/prodotti',{nome:n,categoria:$('m-cat').value,luogo:valSeg($('m-luogo')),scadenza:$('m-scad').value||null,pezzi:+$('m-pezzi').value||1})
+  .then(function(){$('m-nome').value='';$('m-scad').value='';$('m-pezzi').value=1;toast('Aggiunto: '+n);carica()}).catch(function(e){toast(e.message)})};
 $('ricomincia').onclick=function(){if(!confirm('Svuoto la dispensa e le ricette di oggi? Le abbreviazioni imparate restano.'))return;
   api('/api/dispensa/ricomincia',{}).then(function(r){toast('Dispensa svuotata ('+r.tolti+' prodotti)');carica()}).catch(function(e){toast(e.message)})};
 
@@ -308,6 +339,7 @@ function mostraConferma(){var r=S.letto;fase('conferma');
      '<div class="raw">'+esc(x.riga)+'</div>'+
      '<label class="f">Nome</label><input type="text" data-k="nome" value="'+esc(x.nome)+'">'+
      '<div class="grid2"><div><label class="f">Quantità</label><input type="text" data-k="quantita" value="'+esc(x.quantita)+'"></div>'+
+     '<div><label class="f">Pezzi</label><input type="number" min="1" max="99" inputmode="numeric" data-k="pezzi" value="'+(x.pezzi||1)+'"></div></div><div class="grid2">'+
      '<div><label class="f">Scadenza</label><input type="date" data-k="scadenza"></div></div>'+
      '<label class="f">Tipo</label><select data-k="categoria">'+catOpt(x.categoria)+'</select>'+
      '<label class="f">Dove</label>'+seg('l'+i,x.luogo)+'</div>'}).join('');
@@ -321,7 +353,7 @@ function contaScelti(e){if(e&&e.target.dataset.k==='tieni')e.target.closest('.ri
   var n=$('sc-conferma').querySelectorAll('input[data-k=tieni]:checked').length;$('sc-ok').textContent='Aggiungi '+n+' prodotti';$('sc-ok').disabled=!n}
 function confermaScontrino(){var data=$('sc-data').value,out=[];
   $('sc-conferma').querySelectorAll('.riga').forEach(function(el){if(!el.querySelector('[data-k=tieni]').checked)return;var x=S.letto.righe[+el.dataset.i];
-    out.push({riga:x.riga,nome:el.querySelector('[data-k=nome]').value,quantita:el.querySelector('[data-k=quantita]').value,prezzo:x.prezzo,
+    out.push({riga:x.riga,nome:el.querySelector('[data-k=nome]').value,quantita:el.querySelector('[data-k=quantita]').value,pezzi:+el.querySelector('[data-k=pezzi]').value||1,prezzo:x.prezzo,
       categoria:el.querySelector('[data-k=categoria]').value,luogo:valSeg(el.querySelector('.seg')),scadenza:el.querySelector('[data-k=scadenza]').value||null,acquisto:data})});
   $('sc-ok').disabled=true;
   api('/api/dispensa/conferma',{prodotti:out,ricorda:$('sc-ricorda').checked,bozza:S.bozza}).then(function(r){
